@@ -1,0 +1,55 @@
+plugins {
+    id 'java'
+}
+
+group 'com.amazonaws.kvstranscribestreaming'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // JUnit dependencies for testing
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+
+    // AWS SDK dependencies
+    implementation 'com.amazonaws:aws-java-sdk-kinesisvideo:1.11.987'
+    implementation 'com.amazonaws:aws-java-sdk-dynamodb:1.11.987'
+    implementation 'com.amazonaws:aws-java-sdk-cloudwatch:1.11.987'
+    implementation 'com.amazonaws:amazon-kinesis-video-streams-parser-library:1.2.1'
+    implementation 'software.amazon.awssdk:transcribestreaming:2.16.30' // AWS SDK v2 for Transcribe Streaming
+    implementation 'software.amazon.awssdk:auth:2.16.30' // AWS SDK v2 for credentials
+
+    // Lambda SDK
+    implementation 'com.amazonaws:aws-lambda-java-core:1.2.1'
+    implementation 'com.amazonaws:aws-lambda-java-events:3.8.0'
+    runtimeOnly 'com.amazonaws:aws-lambda-java-log4j2:1.5.1'
+
+    // Logging
+    implementation 'org.slf4j:slf4j-api:1.7.33'
+
+    // Apache Logging
+    implementation 'org.apache.logging.log4j:log4j-api:2.17.1'
+    implementation 'org.apache.logging.log4j:log4j-core:2.17.1'
+
+    // Reactive Streams
+    implementation 'org.reactivestreams:reactive-streams:1.0.3'
+}
+
+
+task buildZip(type: Zip) {
+    // Include JAR file and dependencies into the 'lib' directory inside the zip
+    into('lib') {
+        from(jar)
+        from(configurations.runtimeClasspath)
+    }
+
+    from('src/main/resources')
+}
+
+
+test {
+    useJUnitPlatform()
+}
