@@ -1,11 +1,20 @@
 package com.amazonaws.transcribestreaming;
 
 import com.amazonaws.kvstranscribestreaming.TranscribedSegmentWriter;
+import com.amazonaws.kvstranscribestreaming.TranscriptionRequest;
+import com.amazonaws.services.polly.model.SynthesizeSpeechResult;
+import com.amazonaws.translation.PollySpeechSynthesizer;
+import com.amazonaws.translation.TranslateText;
+import com.amazonaws.translation.WebSocketStreamer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.transcribestreaming.model.Result;
 import software.amazon.awssdk.services.transcribestreaming.model.StartStreamTranscriptionResponse;
 import software.amazon.awssdk.services.transcribestreaming.model.TranscriptEvent;
 import software.amazon.awssdk.services.transcribestreaming.model.TranscriptResultStream;
+
+import java.time.Instant;
+import java.util.List;
 
 /**
  * Implementation of StreamTranscriptionBehavior to define how a stream response is handled.
@@ -30,10 +39,18 @@ public class StreamTranscriptionBehaviorImpl implements StreamTranscriptionBehav
     private static final Logger logger = LoggerFactory.getLogger(StreamTranscriptionBehaviorImpl.class);
     private final TranscribedSegmentWriter segmentWriter;
     private final String tableName;
+    private final TranscriptionRequest request;
+    private final TranslateText translateText;
 
     public StreamTranscriptionBehaviorImpl(TranscribedSegmentWriter segmentWriter, String tableName) {
+        this(segmentWriter, tableName, new TranscriptionRequest());
+    }
+
+    public StreamTranscriptionBehaviorImpl(TranscribedSegmentWriter segmentWriter, String tableName, TranscriptionRequest request) {
         this.segmentWriter = segmentWriter;
         this.tableName = tableName;
+        this.request = request;
+        translateText = new TranslateText(request.getTranslateFromLanguageCode(), request.getTranslateToLanguageCode());
     }
 
     @Override
@@ -45,8 +62,47 @@ public class StreamTranscriptionBehaviorImpl implements StreamTranscriptionBehav
     public void onStream(TranscriptResultStream e) {
         // EventResultStream has other fields related to the timestamp of the transcripts in it.
         // Please refer to the javadoc of TranscriptResultStream for more details
-        segmentWriter.writeToDynamoDB((TranscriptEvent) e, tableName);
+        TranscriptEvent event = (TranscriptEvent) e;
 
+//        segmentWriter.writeToDynamoDB(event, tableName);
+
+        String transcript = getTranscript(event);
+
+        String translatedText = translateText.translate(transcript);
+
+        PollySpeechSynthesizer synthesizer = new PollySpeechSynthesizer("hi-IN", "Aditi");
+        SynthesizeSpeechResult speechResult = synthesizer.synthesizeSpeech(translatedText);
+
+        WebSocketStreamer streamer = new WebSocketStreamer("https://qv1241nc27.execute-api.us-east-1.amazonaws.com/dev/", "WebSocketConnections");
+        streamer.streamAudioToConnections(speechResult);
+    }
+
+    String getTranscript(TranscriptEvent transcriptEvent) {
+        List<Result> results = transcriptEvent.transcript().results();
+        String transcript = "";
+
+        if (results.size() > 0) {
+
+            Result result = results.get(0);
+
+            if (!result.isPartial()) {
+                try {
+                    if (result.alternatives().size() > 0) {
+                        if (!result.alternatives().get(0).transcript().isEmpty()) {
+                            transcript = result.alternatives().get(0).transcript();
+                        }
+                    }
+
+                    logger.info("Got transcript: " + result.alternatives().get(0).transcript());
+                    logger.info("Processed transcript at: " + Instant.now().getEpochSecond());
+
+                } catch (Exception e) {
+                    logger.error("Could not process transcript: ", e);
+                }
+            }
+        }
+
+        return transcript;
     }
 
     @Override

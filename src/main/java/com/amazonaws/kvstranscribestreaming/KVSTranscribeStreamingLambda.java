@@ -107,13 +107,13 @@ public class KVSTranscribeStreamingLambda implements RequestHandler<Transcriptio
 
             // If an inputFileName has been provided in the request, stream audio from the file to Transcribe
             if (request.getInputFileName() != null) {
-                startFileToTranscribeStreaming(request.getInputFileName(), request.getLanguageCode());
+                startFileToTranscribeStreaming(request.getInputFileName(), request.getTranscribeLanguageCode());
             }
             // Else start streaming between KVS and Transcribe
             else {
                 startKVSToTranscribeStreaming(request.getStreamARN(), request.getStartFragmentNum(), request.getConnectContactId(),
-                        request.isTranscriptionEnabled(), request.getLanguageCode(), request.getSaveCallRecording(),
-                        request.isStreamAudioFromCustomer(), request.isStreamAudioToCustomer());
+                        request.isTranscriptionEnabled(), request.getTranscribeLanguageCode(), request.getSaveCallRecording(),
+                        request.isStreamAudioFromCustomer(), request.isStreamAudioToCustomer(), request);
             }
 
             return "{ \"result\": \"Success\" }";
@@ -133,11 +133,12 @@ public class KVSTranscribeStreamingLambda implements RequestHandler<Transcriptio
      * @param startFragmentNum
      * @param contactId
      * @param languageCode
+     * @param request
      * @throws Exception
      */
     private void startKVSToTranscribeStreaming(String streamARN, String startFragmentNum, String contactId, boolean transcribeEnabled,
                                                Optional<String> languageCode, Optional<Boolean> saveCallRecording,
-                                               boolean isStreamAudioFromCustomerEnabled, boolean isStreamAudioToCustomerEnabled) throws Exception {
+                                               boolean isStreamAudioFromCustomerEnabled, boolean isStreamAudioToCustomerEnabled, TranscriptionRequest request) throws Exception {
         String streamName = streamARN.substring(streamARN.indexOf("/") + 1, streamARN.lastIndexOf("/"));
 
         KVSStreamTrackObject kvsStreamTrackObjectFromCustomer = null;
@@ -160,12 +161,12 @@ public class KVSTranscribeStreamingLambda implements RequestHandler<Transcriptio
 
                 if (kvsStreamTrackObjectFromCustomer != null) {
                     fromCustomerResult = getStartStreamingTranscriptionFuture(kvsStreamTrackObjectFromCustomer,
-                            languageCode, contactId, client, fromCustomerSegmentWriter, TABLE_CALLER_TRANSCRIPT, KVSUtils.TrackName.AUDIO_FROM_CUSTOMER.getName());
+                            languageCode, contactId, client, fromCustomerSegmentWriter, TABLE_CALLER_TRANSCRIPT, KVSUtils.TrackName.AUDIO_FROM_CUSTOMER.getName(), request);
                 }
 
                 if (kvsStreamTrackObjectToCustomer != null) {
                     toCustomerResult = getStartStreamingTranscriptionFuture(kvsStreamTrackObjectToCustomer,
-                            languageCode, contactId, client, toCustomerSegmentWriter, TABLE_CALLER_TRANSCRIPT_TO_CUSTOMER, KVSUtils.TrackName.AUDIO_TO_CUSTOMER.getName());
+                            languageCode, contactId, client, toCustomerSegmentWriter, TABLE_CALLER_TRANSCRIPT_TO_CUSTOMER, KVSUtils.TrackName.AUDIO_TO_CUSTOMER.getName(), request);
                 }
 
                 // Synchronous wait for stream to close, and close client connection
@@ -316,7 +317,7 @@ public class KVSTranscribeStreamingLambda implements RequestHandler<Transcriptio
     private CompletableFuture<Void> getStartStreamingTranscriptionFuture(KVSStreamTrackObject kvsStreamTrackObject, Optional<String> languageCode,
                                                                          String contactId, TranscribeStreamingRetryClient client,
                                                                          TranscribedSegmentWriter transcribedSegmentWriter,
-                                                                         String tableName, String channel) {
+                                                                         String tableName, String channel, TranscriptionRequest request) {
         return client.startStreamTranscription(
                 // since we're definitely working with telephony audio, we know that's 8 kHz
                 getRequest(8000, languageCode),
@@ -327,7 +328,7 @@ public class KVSTranscribeStreamingLambda implements RequestHandler<Transcriptio
                         kvsStreamTrackObject.getTagProcessor(),
                         kvsStreamTrackObject.getFragmentVisitor(),
                         kvsStreamTrackObject.getTrackName()),
-                new StreamTranscriptionBehaviorImpl(transcribedSegmentWriter, tableName),
+                new StreamTranscriptionBehaviorImpl(transcribedSegmentWriter, tableName, request),
                 channel
         );
     }

@@ -27,7 +27,13 @@ public class TranscriptionRequest {
     String inputFileName = null;
     String startFragmentNum = null;
     String connectContactId = null;
-    Optional<String> languageCode = Optional.empty();
+    Optional<String> transcribeLanguageCode = Optional.empty();
+
+    Optional<String> translateFromLanguageCode = Optional.empty();
+
+    Optional<String> translateToLanguageCode = Optional.empty();
+    Optional<String> pollyLanguageCode = Optional.empty();
+    Optional<String> pollyVoiceId = Optional.empty();
     boolean transcriptionEnabled = false;
     Optional<Boolean> saveCallRecording = Optional.empty();
     boolean streamAudioFromCustomer = true;
@@ -73,16 +79,55 @@ public class TranscriptionRequest {
         this.connectContactId = connectContactId;
     }
 
-    public Optional<String> getLanguageCode() {
-
-        return this.languageCode;
+    public Optional<String> getTranscribeLanguageCode() {
+        return this.transcribeLanguageCode;
     }
 
-    public void setLanguageCode(String languageCode) {
+    public void setTranscribeLanguageCode(String transcribeLanguageCode) {
+        if ((transcribeLanguageCode != null) && (transcribeLanguageCode.length() > 0)) {
 
-        if ((languageCode != null) && (languageCode.length() > 0)) {
+            this.transcribeLanguageCode = Optional.of(transcribeLanguageCode);
+        }
+    }
 
-            this.languageCode = Optional.of(languageCode);
+    public String getTranslateFromLanguageCode() {
+        return translateFromLanguageCode.orElse("en");
+    }
+
+    public void setTranslateFromLanguageCode(String translateFromLanguageCode) {
+        if ((translateFromLanguageCode != null) && (translateFromLanguageCode.length() > 0)) {
+
+            this.translateFromLanguageCode = Optional.of(translateFromLanguageCode);
+        }
+    }
+
+    public String getTranslateToLanguageCode() {
+        return translateToLanguageCode.orElse("en");
+    }
+
+    public void setTranslateToLanguageCode(String translateToLanguageCode) {
+        if ((translateToLanguageCode != null) && (translateToLanguageCode.length() > 0)) {
+            this.translateToLanguageCode = Optional.of(translateToLanguageCode);
+        }
+    }
+
+    public String getPollyLanguageCode() {
+        return pollyLanguageCode.orElse("en-US");
+    }
+
+    public void setPollyLanguageCode(String pollyLanguageCode) {
+        if ((pollyLanguageCode != null) && (pollyLanguageCode.length() > 0)) {
+            this.pollyLanguageCode = Optional.of(pollyLanguageCode);
+        }
+    }
+
+    public String getPollyVoiceId() {
+        return pollyVoiceId.orElse("Danielle");
+    }
+
+    public void setPollyVoiceId(String pollyVoiceId) {
+        if ((pollyVoiceId != null) && (pollyVoiceId.length() > 0)) {
+            this.pollyVoiceId = Optional.of(pollyVoiceId);
         }
     }
 
@@ -127,7 +172,7 @@ public class TranscriptionRequest {
     public String toString() {
 
         return String.format("streamARN=%s, startFragmentNum=%s, connectContactId=%s, languageCode=%s, transcriptionEnabled=%s, saveCallRecording=%s, streamAudioFromCustomer=%s, streamAudioToCustomer=%s",
-                getStreamARN(), getStartFragmentNum(), getConnectContactId(), getLanguageCode(), isTranscriptionEnabled(), isSaveCallRecordingEnabled(), isStreamAudioFromCustomer(), isStreamAudioToCustomer());
+                getStreamARN(), getStartFragmentNum(), getConnectContactId(), getTranscribeLanguageCode(), isTranscriptionEnabled(), isSaveCallRecordingEnabled(), isStreamAudioFromCustomer(), isStreamAudioToCustomer());
     }
 
     public void validate() throws IllegalArgumentException {
@@ -141,8 +186,8 @@ public class TranscriptionRequest {
 
         // language code is optional; if provided, it should be one of the values accepted by
         // https://docs.aws.amazon.com/transcribe/latest/dg/API_streaming_StartStreamTranscription.html#API_streaming_StartStreamTranscription_RequestParameters
-        if (languageCode.isPresent()) {
-            if (!LanguageCode.knownValues().contains(LanguageCode.fromValue(languageCode.get()))) {
+        if (transcribeLanguageCode.isPresent()) {
+            if (!LanguageCode.knownValues().contains(LanguageCode.fromValue(transcribeLanguageCode.get()))) {
                 throw new IllegalArgumentException("Incorrect language code");
             }
         }
