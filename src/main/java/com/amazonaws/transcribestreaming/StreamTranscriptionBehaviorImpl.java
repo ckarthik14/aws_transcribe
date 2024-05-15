@@ -69,12 +69,15 @@ public class StreamTranscriptionBehaviorImpl implements StreamTranscriptionBehav
         String transcript = getTranscript(event);
 
         String translatedText = translateText.translate(transcript);
+        logger.info("Translated text to: " + translatedText);
 
         PollySpeechSynthesizer synthesizer = new PollySpeechSynthesizer("hi-IN", "Aditi");
+        logger.info("Finished synthesizing speech for: " + translatedText);
         SynthesizeSpeechResult speechResult = synthesizer.synthesizeSpeech(translatedText);
 
         WebSocketStreamer streamer = new WebSocketStreamer("https://qv1241nc27.execute-api.us-east-1.amazonaws.com/dev/", "WebSocketConnections");
         streamer.streamAudioToConnections(speechResult);
+        logger.info("Finished streaming to socket for: " + translatedText);
     }
 
     String getTranscript(TranscriptEvent transcriptEvent) {

@@ -36,6 +36,7 @@ public class WebSocketStreamer {
 
     public void streamAudioToConnections(SynthesizeSpeechResult speechResult) {
         for (String connectionId : connectionIds) {
+            System.out.println("Posting to connection: " + connectionId);
             try (InputStream audioStream = speechResult.getAudioStream()) {
                 byte[] buffer = new byte[1024];
                 while (audioStream.read(buffer) != -1) {
