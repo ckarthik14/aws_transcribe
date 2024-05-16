@@ -17,7 +17,6 @@ public class PollySpeechSynthesizer {
         this.languageCode = languageCode;
         this.voiceId = voiceId;
         this.pollyClient = AmazonPollyClientBuilder.standard()
-                .withCredentials(new AWSStaticCredentialsProvider(new ProfileCredentialsProvider().getCredentials()))
                 .withRegion("us-east-1")
                 .build();
     }

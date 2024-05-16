@@ -18,8 +18,7 @@ public class TranslateText {
     public String translate(String transcript) {
         // Create an AmazonTranslate client
         AmazonTranslate translate = AmazonTranslateClientBuilder.standard()
-                .withCredentials(new AWSStaticCredentialsProvider(new ProfileCredentialsProvider().getCredentials()))
-                .withRegion("us-west-2") // specify the region you configured
+                .withRegion("us-east-1") // specify the region you configured
                 .build();
 
         // Create request
@@ -30,9 +29,6 @@ public class TranslateText {
 
         // Translate the text
         TranslateTextResult result = translate.translateText(request);
-
-        // Output the translation
-        System.out.println("Translated text: '" + result.getTranslatedText() + "'");
 
         return result.getTranslatedText();
     }

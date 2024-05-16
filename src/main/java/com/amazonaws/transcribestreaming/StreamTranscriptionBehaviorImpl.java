@@ -41,6 +41,8 @@ public class StreamTranscriptionBehaviorImpl implements StreamTranscriptionBehav
     private final String tableName;
     private final TranscriptionRequest request;
     private final TranslateText translateText;
+    private final PollySpeechSynthesizer synthesizer;
+    private final WebSocketStreamer streamer;
 
     public StreamTranscriptionBehaviorImpl(TranscribedSegmentWriter segmentWriter, String tableName) {
         this(segmentWriter, tableName, new TranscriptionRequest());
@@ -50,7 +52,10 @@ public class StreamTranscriptionBehaviorImpl implements StreamTranscriptionBehav
         this.segmentWriter = segmentWriter;
         this.tableName = tableName;
         this.request = request;
+
         translateText = new TranslateText(request.getTranslateFromLanguageCode(), request.getTranslateToLanguageCode());
+        synthesizer = new PollySpeechSynthesizer(request.getPollyLanguageCode(), request.getPollyVoiceId());
+        streamer = new WebSocketStreamer("https://qv1241nc27.execute-api.us-east-1.amazonaws.com/dev/", "WebSocketConnections");
     }
 
     @Override
@@ -68,16 +73,16 @@ public class StreamTranscriptionBehaviorImpl implements StreamTranscriptionBehav
 
         String transcript = getTranscript(event);
 
-        String translatedText = translateText.translate(transcript);
-        logger.info("Translated text to: " + translatedText);
+        if (!transcript.isEmpty()) {
+            String translatedText = translateText.translate(transcript);
+            logger.info("Translated text: '" + translatedText + "'");
 
-        PollySpeechSynthesizer synthesizer = new PollySpeechSynthesizer("hi-IN", "Aditi");
-        logger.info("Finished synthesizing speech for: " + translatedText);
-        SynthesizeSpeechResult speechResult = synthesizer.synthesizeSpeech(translatedText);
+            logger.info("Finished synthesizing speech for: " + translatedText);
+            SynthesizeSpeechResult speechResult = synthesizer.synthesizeSpeech(translatedText);
 
-        WebSocketStreamer streamer = new WebSocketStreamer("https://qv1241nc27.execute-api.us-east-1.amazonaws.com/dev/", "WebSocketConnections");
-        streamer.streamAudioToConnections(speechResult);
-        logger.info("Finished streaming to socket for: " + translatedText);
+            streamer.streamAudioToConnections(speechResult);
+            logger.info("Finished streaming to socket for: " + translatedText);
+        }
     }
 
     String getTranscript(TranscriptEvent transcriptEvent) {
@@ -96,7 +101,7 @@ public class StreamTranscriptionBehaviorImpl implements StreamTranscriptionBehav
                         }
                     }
 
-                    logger.info("Got transcript: " + result.alternatives().get(0).transcript());
+                    logger.info("Transcript: " + result.alternatives().get(0).transcript());
                     logger.info("Processed transcript at: " + Instant.now().getEpochSecond());
 
                 } catch (Exception e) {

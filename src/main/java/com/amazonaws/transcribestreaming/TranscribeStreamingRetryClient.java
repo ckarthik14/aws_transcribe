@@ -224,6 +224,7 @@ public class TranscribeStreamingRetryClient implements AutoCloseable {
                     // We swallow any exception occurred while processing the TranscriptEvent and continue transcribing
                     // Transcribe errors will however cause the future to complete exceptionally and we'll retry (if applicable)
                     catch (Exception e) {
+                        logger.info("Found exception while translating: " + Arrays.toString(e.getStackTrace()));
                     }
                 })
                 .build();

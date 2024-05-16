@@ -37,7 +37,7 @@ public class TranscriptionRequest {
     boolean transcriptionEnabled = false;
     Optional<Boolean> saveCallRecording = Optional.empty();
     boolean streamAudioFromCustomer = true;
-    boolean streamAudioToCustomer = true;
+    boolean streamAudioToCustomer = false;
 
     public String getStreamARN() {
 
@@ -169,10 +169,23 @@ public class TranscriptionRequest {
         return (saveCallRecording.isPresent() ? saveCallRecording.get() : false);
     }
 
+    @Override
     public String toString() {
-
-        return String.format("streamARN=%s, startFragmentNum=%s, connectContactId=%s, languageCode=%s, transcriptionEnabled=%s, saveCallRecording=%s, streamAudioFromCustomer=%s, streamAudioToCustomer=%s",
-                getStreamARN(), getStartFragmentNum(), getConnectContactId(), getTranscribeLanguageCode(), isTranscriptionEnabled(), isSaveCallRecordingEnabled(), isStreamAudioFromCustomer(), isStreamAudioToCustomer());
+        return "TranscriptionRequest{" +
+                "streamARN='" + streamARN + '\'' +
+                ", inputFileName='" + inputFileName + '\'' +
+                ", startFragmentNum='" + startFragmentNum + '\'' +
+                ", connectContactId='" + connectContactId + '\'' +
+                ", transcribeLanguageCode=" + transcribeLanguageCode +
+                ", translateFromLanguageCode=" + translateFromLanguageCode +
+                ", translateToLanguageCode=" + translateToLanguageCode +
+                ", pollyLanguageCode=" + pollyLanguageCode +
+                ", pollyVoiceId=" + pollyVoiceId +
+                ", transcriptionEnabled=" + transcriptionEnabled +
+                ", saveCallRecording=" + saveCallRecording +
+                ", streamAudioFromCustomer=" + streamAudioFromCustomer +
+                ", streamAudioToCustomer=" + streamAudioToCustomer +
+                '}';
     }
 
     public void validate() throws IllegalArgumentException {
