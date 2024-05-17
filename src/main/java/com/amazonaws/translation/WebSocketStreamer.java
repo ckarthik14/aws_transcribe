@@ -30,10 +30,6 @@ public class WebSocketStreamer {
                 .build();
         this.dynamoDbClient = DynamoDbClient.create();
         this.tableName = tableName;
-
-        ScanRequest scanRequest = ScanRequest.builder()
-                .tableName(tableName)
-                .build();
     }
 
     public void streamAudioToConnections(SynthesizeSpeechResult speechResult) {
@@ -68,8 +64,7 @@ public class WebSocketStreamer {
                 .tableName(tableName)
                 .build();
         var scanResponse = dynamoDbClient.scan(scanRequest);
-        List<String> connectionIds = scanResponse.items().stream().map(item -> item.get("connectionId").s()).toList();
-        return connectionIds;
+        return scanResponse.items().stream().map(item -> item.get("connectionId").s()).toList();
     }
 
     public static String encodeToBase64(InputStream inputStream) throws IOException {
